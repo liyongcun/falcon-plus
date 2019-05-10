@@ -23,10 +23,18 @@ import (
 	"github.com/toolkits/file"
 )
 
+type Ssh struct {
+	Ip_addr  string `json:"ip_addr"`
+	Ip_port  int    `json:"ip_port"`
+	User     string `json:"user"`
+	Password string `json:"password"`
+	Path     string `json:"path"`
+}
+
 type PluginConfig struct {
 	Enabled bool   `json:"enabled"`
 	Dir     string `json:"dir"`
-	Git     string `json:"git"`
+	Ssh     Ssh    `json:"ssh"`
 	LogDir  string `json:"logs"`
 }
 

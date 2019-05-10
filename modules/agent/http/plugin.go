@@ -16,13 +16,53 @@ package http
 
 import (
 	"fmt"
+	"github.com/golang/sftp"
 	"github.com/open-falcon/falcon-plus/modules/agent/g"
 	"github.com/open-falcon/falcon-plus/modules/agent/plugins"
 	"github.com/toolkits/file"
+	"golang.org/x/crypto/ssh"
+	"log"
 	"net/http"
-	"os/exec"
+	"os"
+	"path/filepath"
+
+	//"os/exec"
+	"time"
 )
 
+// TODO  add by liyc 这里修改为sftp的模式，因为ssh是远程访问的核心
+// TODO 现在机器基本都是ssh登陆，用密码登陆，省去免密的麻烦
+func connect(user, password, host string, port int) (*sftp.Client, error) {
+	var (
+		auth         []ssh.AuthMethod
+		addr         string
+		clientConfig *ssh.ClientConfig
+		sshClient    *ssh.Client
+		sftpClient   *sftp.Client
+		err          error
+	)
+	// get auth method
+	auth = make([]ssh.AuthMethod, 0)
+	auth = append(auth, ssh.Password(password))
+
+	clientConfig = &ssh.ClientConfig{
+		User:    user,
+		Auth:    auth,
+		Timeout: 30 * time.Second,
+	}
+	// connet to ssh
+	addr = fmt.Sprintf("%s:%d", host, port)
+	if sshClient, err = ssh.Dial("tcp", addr, clientConfig); err != nil {
+		return nil, err
+	}
+	// create sftp client
+	if sftpClient, err = sftp.NewClient(sshClient); err != nil {
+		return nil, err
+	}
+	return sftpClient, nil
+}
+
+/*
 func configPluginRoutes() {
 	http.HandleFunc("/plugin/update", func(w http.ResponseWriter, r *http.Request) {
 		if !g.Config().Plugin.Enabled {
@@ -77,6 +117,105 @@ func configPluginRoutes() {
 		w.Write([]byte("success"))
 	})
 
+	http.HandleFunc("/plugins", func(w http.ResponseWriter, r *http.Request) {
+		//TODO: not thread safe
+		RenderDataJson(w, plugins.Plugins)
+	})
+}*/
+func ssh_deal(reset_flag bool) (msg string, erra error) {
+	var (
+		err        error
+		sftpClient *sftp.Client
+	)
+	dir := g.Config().Plugin.Dir
+	parentDir := file.Dir(dir)
+	file.InsureDir(parentDir)
+	if file.IsExist(dir) {
+		// 这里换成实际的 SSH 连接的 用户名，密码，主机名或IP，SSH端口
+		sftpClient, err = connect(g.Config().Plugin.Ssh.User, g.Config().Plugin.Ssh.Password, g.Config().Plugin.Ssh.Ip_addr, g.Config().Plugin.Ssh.Ip_port)
+		if err != nil {
+			log.Fatal(err)
+		}
+		defer sftpClient.Close()
+		wl := sftpClient.Walk(g.Config().Plugin.Ssh.Path)
+		if err != nil {
+			return fmt.Sprintf("update using ssh err in dir:%s fail. error: %s", dir, err), err
+		}
+		for wl.Step() {
+			aRel, err := filepath.Rel(g.Config().Plugin.Ssh.Path, wl.Path())
+			if err != nil {
+				return fmt.Sprintf("update using ssh get root path in dir:%s ,real path %s fail. error: %s", dir, wl.Path()), err
+			}
+			if aRel == "." || aRel == ".." {
+				continue
+			}
+			//sftp文件信息
+			FileInfo, err := sftpClient.Stat(aRel)
+			if err != nil {
+				return fmt.Sprintf("update using ssh get real path  stat in :%s fail. error: %s", aRel, err), err
+			}
+			lRpath, err := filepath.Rel(dir, wl.Path())
+			if err != nil {
+				return fmt.Sprintf("update using ssh get real path in :%s/%s fail. error: %s", dir, wl.Path(), err), err
+			}
+			lfile, err := os.Stat(lRpath)
+			if !FileInfo.IsDir() {
+				//处理文件,比较时间
+				if file.IsExist(lRpath) {
+					//本地文件信息
+					if err != nil {
+						return fmt.Sprintf("get local file info err :%s fail. error: %s", lRpath, err), err
+					}
+					if lfile.ModTime().Unix() >= FileInfo.ModTime().Unix() && !reset_flag {
+						continue
+					}
+				}
+				srcFile, err := sftpClient.Open(aRel)
+				defer srcFile.Close()
+				if err != nil {
+					return fmt.Sprintf("open ssh  file  err :%s fail. error: %s", lRpath, err), err
+				}
+				dstFile, err := os.Create(lRpath)
+				defer dstFile.Close()
+				if err != nil {
+					return fmt.Sprintf("open local file  err :%s fail. error: %s", lRpath, err), err
+				}
+				if _, err = srcFile.WriteTo(dstFile); err != nil {
+					return fmt.Sprintf("write  to  local file  err :%s fail. error: %s", lRpath, err), err
+				}
+			} else {
+				file.InsureDir(lRpath)
+			}
+		}
+	}
+	return "Success", nil
+}
+
+func configPluginRoutes() {
+	http.HandleFunc("/plugin/update", func(w http.ResponseWriter, r *http.Request) {
+		if !g.Config().Plugin.Enabled {
+			w.Write([]byte("plugin not enabled"))
+			return
+		}
+		err_msg, err := ssh_deal(false)
+		if err != nil {
+			w.Write([]byte("plugin not update : [" + err_msg + "]"))
+			return
+		}
+		w.Write([]byte("success"))
+	})
+	http.HandleFunc("/plugin/reset", func(w http.ResponseWriter, r *http.Request) {
+		if !g.Config().Plugin.Enabled {
+			w.Write([]byte("plugin not enabled"))
+			return
+		}
+		err_msg, err := ssh_deal(true)
+		if err != nil {
+			w.Write([]byte("plugin not reset: [" + err_msg + "]"))
+			return
+		}
+		w.Write([]byte("success"))
+	})
 	http.HandleFunc("/plugins", func(w http.ResponseWriter, r *http.Request) {
 		//TODO: not thread safe
 		RenderDataJson(w, plugins.Plugins)
