@@ -5,7 +5,7 @@
     "plugin": {
         "enabled": false,
         "dir": "./plugin",
-        "git": "https://github.com/open-falcon/plugin.git",
+        "ssh": {"ip_addr": "","ip_port":"","user": "","password":"","path": ""},
         "logs": "./logs"
     },
     "heartbeat": {
