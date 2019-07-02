@@ -23,6 +23,20 @@ import (
 	"github.com/toolkits/file"
 )
 
+type Net_speed struct {
+	isServer    bool     `json:"isServer"`
+	clientDest  []string `json:"clientDests"`
+	testTypeStr string   `json:"testType"`
+	thCount     int      `json:"threads"`
+	bufLen      string   `json:"bufflength"`
+	duration    int      `json:"duration"`
+	rttCount    int      `json:"rttCount"`
+	port        int      `json:"port"`
+	ipv6        bool     `json:"ipv6flag"`
+	gap         int      `json:"testgap"`
+	reverse     bool     `json:"reverseflag"`
+}
+
 type Ssh struct {
 	Ip_addr  string `json:"ip_addr"`
 	Ip_port  int    `json:"ip_port"`
@@ -74,6 +88,7 @@ type GlobalConfig struct {
 	Collector     *CollectorConfig  `json:"collector"`
 	DefaultTags   map[string]string `json:"default_tags"`
 	IgnoreMetrics map[string]bool   `json:"ignore"`
+	Net_speed     *Net_speed        `json:"net_speed"`
 }
 
 var (
