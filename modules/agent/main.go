@@ -17,6 +17,7 @@ package main
 import (
 	"flag"
 	"fmt"
+	log "github.com/Sirupsen/logrus"
 	"github.com/open-falcon/falcon-plus/modules/agent/cron"
 	"github.com/open-falcon/falcon-plus/modules/agent/ethr"
 	"github.com/open-falcon/falcon-plus/modules/agent/funcs"
@@ -65,10 +66,14 @@ func main() {
 	cron.SyncBuiltinMetrics()
 	cron.SyncTrustableIps()
 	cron.Collect()
+	log.Info("g.Config().Net_speed.IsServer :%t\n", g.Config().Net_speed.IsServer)
+	log.Info("g.Config().Net_speed.IsTest :%t\n", g.Config().Net_speed.IsTest)
 	if g.Config().Net_speed.IsServer {
 		ethr.Run(true)
 	}
-	//todo 测试的ip建议通过其他有效的方法进行测试
+	if g.Config().Net_speed.IsTest {
+		ethr.Run(false)
+	}
 	go http.Start()
 
 	select {}

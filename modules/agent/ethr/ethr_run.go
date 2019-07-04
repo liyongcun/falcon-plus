@@ -4,9 +4,7 @@ import (
 	"fmt"
 	log "github.com/Sirupsen/logrus"
 	"github.com/open-falcon/falcon-plus/modules/agent/g"
-	"io/ioutil"
 	"runtime"
-	"strings"
 	"time"
 )
 
@@ -19,10 +17,6 @@ func Run(ServerFlag bool) {
 	// problem.
 	//
 	runtime.GOMAXPROCS(1024)
-	isServer := g.Config().Net_speed.IsServer
-	//测试的客户端，建议用插件的方式，便于修改
-	clientDest := g.Config().Net_speed.ClientDest //flag.String("c", "", "")
-
 	testTypePtr := g.Config().Net_speed.TestTypeStr // flag.String("t", "", "")
 	thCount := g.Config().Net_speed.ThCount         // flag.Int("n", 1, "")
 	bufLenStr := g.Config().Net_speed.BufLen        //flag.String("l", "16KB", "")
@@ -33,13 +27,8 @@ func Run(ServerFlag bool) {
 	gap := g.Config().Net_speed.Gap                 //flag.Duration("g", 0, "")
 	reverse := g.Config().Net_speed.Reverse         //flag.Bool("r", false, "")
 
-	if !isServer && ServerFlag {
-		if clientDest != "" {
-			log.Error("Invalid arguments, \"-c\" cannot be used with \"-s\".")
-		}
-	}
 	if reverse && ServerFlag {
-		log.Error("Invalid arguments, \"-r\" can only be used in client mode.")
+		log.Error("Invalid arguments, reverse can only be used in client mode.")
 	}
 	if use6 {
 		ipVer = ethrIPv6
@@ -68,8 +57,7 @@ func Run(ServerFlag bool) {
 	case "cl":
 		testType = ConnLatency
 	default:
-		log.Error(fmt.Sprintf("Invalid value \"%s\" specified for parameter \"-t\".\n"+
-			"Valid parameters and values are:\n", testTypePtr))
+		log.Error(fmt.Sprintf("Invalid value %s specified for parameter testType.\n", testTypePtr))
 	}
 	proto := TCP
 	if thCount <= 0 {
@@ -98,32 +86,23 @@ func Run(ServerFlag bool) {
 	if ServerFlag {
 		runServer(testParam)
 	} else {
-		if contents, err := ioutil.ReadFile(g.Config().Plugin.Dir + "ethr_client.txt"); err == nil {
-			result := strings.Split(string(contents), "\n")
-			for client := range result {
-				runClient(testParam, clientParam, result[client])
-			}
-		}
+		go runClient(testParam, clientParam, g.Config().Plugin.Dir+"ethr_client.txt")
 	}
 }
 
 func emitUnsupportedTest(testParam EthrTestParam) {
-	log.Error(fmt.Sprintf("\"%s\" test for \"%s\" is not supported.\n",
+	log.Error(fmt.Sprintf("%s test for %s is not supported.\n",
 		testToString(testParam.TestID.Type), protoToString(testParam.TestID.Protocol)))
 }
 
 func printReverseModeError() {
-	log.Error("Reverse mode (-r) is only supported for TCP Bandwidth tests.")
+	log.Error("Reverse mode is only supported for TCP Bandwidth tests.")
 }
 
 func validateTestParam(sFlag bool, testParam EthrTestParam) {
 	testType := testParam.TestID.Type
 	protocol := testParam.TestID.Protocol
-	if sFlag {
-		if testType != All || protocol != TCP {
-			emitUnsupportedTest(testParam)
-		}
-	} else if !sFlag {
+	if !sFlag {
 		switch protocol {
 		case TCP:
 			if testType != Bandwidth && testType != Cps && testType != Latency {

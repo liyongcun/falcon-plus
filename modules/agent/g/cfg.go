@@ -64,6 +64,7 @@ type CollectorConfig struct {
 }
 type Net_speed struct {
 	IsServer    bool   `json:"isServer"`
+	IsTest      bool   `json:"isTest"`
 	ClientDest  string `json:"clientDests"`
 	TestTypeStr string `json:"testType"`
 	ThCount     int    `json:"threads"`

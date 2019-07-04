@@ -7,10 +7,12 @@ import (
 	"github.com/open-falcon/falcon-plus/common/model"
 	"github.com/open-falcon/falcon-plus/modules/agent/g"
 	"io"
+	"io/ioutil"
 	"net"
 	"os"
 	"os/signal"
 	"sort"
+	"strings"
 	"sync/atomic"
 	"time"
 )
@@ -18,30 +20,40 @@ import (
 var gIgnoreCert bool
 
 //这里是要进行时间间隔
-func runClient(testParam EthrTestParam, clientParam ethrClientParam, server string) {
+func runClient(testParam EthrTestParam, clientParam ethrClientParam, client_dir string) {
 	for {
-		server = "[" + server + "]"
-		test, err := establishSession(testParam, server)
-		if err != nil {
-			log.Info("%v", err)
-			return
+		var client_list []string
+		if contents, err := ioutil.ReadFile(g.Config().Plugin.Dir + "ethr_client.txt"); err == nil {
+			client_list = strings.Split(string(contents), "\n")
+		} else {
+			log.Error("打开测试客户端列表的文件打开失败" + g.Config().Plugin.Dir + "ethr_client.txt")
+			break
 		}
-		runTest(test, clientParam.duration)
-		//todo 发送消息
-		mvs := model.MetricValue{
-			g.IP(),
-			"network.test",
-			float64(test.testResult.data) / clientParam.duration.Seconds(),
-			600,
-			"GAUGE",
-			g.IP() + "." + server,
-			time.Now().Unix()}
-		var metrics []*model.MetricValue
-		metrics = append(metrics, &mvs)
-		g.SendToTransfer(metrics)
-		//todo 这里要释放内存了，因为一般测试时命令行是直接退出的。而这里不是
-		deleteTest(test)
-		time.Sleep(g.COLLECT_INTERVAL)
+		for vv := range client_list {
+			server := "[" + client_list[vv] + "]"
+			test, err := establishSession(testParam, server)
+			if err != nil {
+				log.Info("%v", err)
+				return
+			}
+			runTest(test, clientParam.duration)
+			//todo 发送消息
+			mvs := model.MetricValue{
+				g.IP(),
+				"network.test",
+				float64(test.testResult.data) / clientParam.duration.Seconds(),
+				600,
+				"GAUGE",
+				g.IP() + "." + server,
+				time.Now().Unix()}
+			var metrics []*model.MetricValue
+			metrics = append(metrics, &mvs)
+			g.SendToTransfer(metrics)
+			//todo 这里要释放内存了，因为一般测试时命令行是直接退出的。而这里不是
+			deleteTest(test)
+			time.Sleep(10)
+		}
+		time.Sleep(600)
 	}
 }
 

@@ -5,8 +5,21 @@
     "plugin": {
         "enabled": false,
         "dir": "./plugin",
-        "ssh": {"ip_addr": "","ip_port":"","user": "","password":"","path": ""},
+        "ssh": {"ip_addr": "127.0.0.1","ip_port":22,"user": "root","password":"123456","path": "/root"},
         "logs": "./logs"
+    },
+    "net_speed": {
+        "isServer":true,
+        "isTest": false,
+        "testType":"b",
+        "threads":5,
+        "bufflength":"16KB",
+        "duration":10,
+        "rttCount":1,
+        "port":9999,
+        "ipv6flag":false,
+        "testgap":10,
+        "reverseflag":false
     },
     "heartbeat": {
         "enabled": true,
