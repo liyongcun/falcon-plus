@@ -14,6 +14,19 @@
         "interval": 60,
         "timeout": 1000
     },
+    "net_speed": {
+        "isServer":"",
+        "clientDests":"",
+        "testType":"",
+        "threads":"",
+        "bufflength":"",
+        "duration":"",
+        "rttCount":"",
+        "port":"",
+        "ipv6flag":"",
+        "testgap":"",
+        "reverseflag":""
+    },
     "transfer": {
         "enabled": true,
         "addrs": [

@@ -381,7 +381,7 @@ func calcLatency(test *ethrTest, rttCount uint32, latencyNumbers []time.Duration
 	p99 := latencyNumbers[((rttCountFixed*99)/100)-1]
 	p999 := latencyNumbers[uint64(((float64(rttCountFixed)*99.9)/100)-1)]
 	p9999 := latencyNumbers[uint64(((float64(rttCountFixed)*99.99)/100)-1)]
-	ui.emitLatencyResults(
+	fmt.Print(
 		test.session.remoteAddr,
 		protoToString(test.testParam.TestID.Protocol),
 		avg, min, max, p50, p90, p95, p99, p999, p9999)
