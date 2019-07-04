@@ -23,20 +23,6 @@ import (
 	"github.com/toolkits/file"
 )
 
-type Net_speed struct {
-	isServer    bool     `json:"isServer"`
-	clientDest  []string `json:"clientDests"`
-	testTypeStr string   `json:"testType"`
-	thCount     int      `json:"threads"`
-	bufLen      string   `json:"bufflength"`
-	duration    int      `json:"duration"`
-	rttCount    int      `json:"rttCount"`
-	port        int      `json:"port"`
-	ipv6        bool     `json:"ipv6flag"`
-	gap         int      `json:"testgap"`
-	reverse     bool     `json:"reverseflag"`
-}
-
 type Ssh struct {
 	Ip_addr  string `json:"ip_addr"`
 	Ip_port  int    `json:"ip_port"`
@@ -75,6 +61,19 @@ type HttpConfig struct {
 type CollectorConfig struct {
 	IfacePrefix []string `json:"ifacePrefix"`
 	MountPoint  []string `json:"mountPoint"`
+}
+type Net_speed struct {
+	IsServer    bool   `json:"isServer"`
+	ClientDest  string `json:"clientDests"`
+	TestTypeStr string `json:"testType"`
+	ThCount     int    `json:"threads"`
+	BufLen      string `json:"bufflength"`
+	Duration    int    `json:"duration"`
+	RttCount    int    `json:"rttCount"`
+	Port        int    `json:"port"`
+	Ipv6        bool   `json:"ipv6flag"`
+	Gap         int    `json:"testgap"`
+	Reverse     bool   `json:"reverseflag"`
 }
 
 type GlobalConfig struct {
@@ -161,6 +160,5 @@ func ParseConfig(cfg string) {
 	defer lock.Unlock()
 
 	config = &c
-
 	log.Println("read config file:", cfg, "successfully")
 }
