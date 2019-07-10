@@ -1,9 +1,31 @@
 package goperfcounter
 
+import "os"
+
+/*
+{
+    "debug": false, // 是否开启调制，默认为false
+    "hostname": "", // 机器名(也即endpoint名称)，默认为本机名称
+    "tags": "", // tags标签，默认为空。一个tag形如"key=val"，多个tag用逗号分隔；name为保留字段，因此不允许设置形如"name=xxx"的tag。eg. "cop=xiaomi,module=perfcounter"
+    "step": 60, // 上报周期，单位s，默认为60s
+    "bases":[], // gvm基础信息采集，可选值为"debug"、"runtime"，默认不采集
+    "push": { // push数据到Open-Falcon
+        "enabled":true, // 是否开启自动push，默认开启
+        "api": "" // Open-Falcon接收器地址，默认为本地agent，即"http:// 127.0.0.1:1988/v1/push"
+    },
+    "http": { // http服务，为了安全考虑，当前只允许本地访问
+        "enabled": false, // 是否开启http服务，默认不开启
+        "listen": "" // http服务监听地址，默认为空。eg. "0.0.0.0:2015"表示在2015端口开启http监听
+    }
+}
+*/
 import (
 	"encoding/json"
 	"fmt"
+	//"github.com/open-falcon/falcon-plus/modules/agent/g"
 	"log"
+	"os/exec"
+	"strings"
 	"time"
 
 	"github.com/niean/go-metrics-lite"
@@ -13,6 +35,43 @@ import (
 const (
 	GAUGE = "GAUGE"
 )
+
+func Hostname() (string, error) {
+	hostname := cfg.Hostname
+
+	if os.Getenv("FALCON_ENDPOINT") != "" {
+		hostname = os.Getenv("FALCON_ENDPOINT")
+		return hostname, nil
+	}
+
+	hostname, err := os.Hostname()
+	if err != nil {
+		log.Println("ERROR: os.Hostname() fail", err)
+	}
+	hostname_bak := IP()
+	if strings.Contains(hostname, "localhost") && len(hostname_bak) > 7 && hostname_bak != "127.0.0.1" {
+		hostname = hostname_bak
+	}
+	return hostname, err
+}
+
+func IP() string {
+	host_ip := "127.0.0.1"
+	out, err := exec.Command("hostname", "--all-ip-addresses").Output()
+	if err == nil {
+		ip_list := strings.Split(strings.Replace(string(out), "\n", "", -1), " ")
+		for vv := range ip_list {
+			if ip_list[vv] == "127.0.0.1" || ip_list[vv] == "::1" || strings.Contains(ip_list[vv], "localhost") || len(ip_list[vv]) < 5 {
+				continue
+			}
+			host_ip = ip_list[vv]
+			break
+		}
+	} else {
+		log.Println("hostname --all-ip-addresses err" + err.Error())
+	}
+	return host_ip
+}
 
 func pushToFalcon() {
 	cfg := config()
@@ -66,6 +125,13 @@ func falconMetrics() []*MetricValue {
 func _falconMetric(r metrics.Registry) []*MetricValue {
 	cfg := config()
 	endpoint := cfg.Hostname
+	hostname_bak, h_err := Hostname()
+	if h_err != nil {
+		println("get hostname err")
+	}
+	if strings.Contains(endpoint, "localhost") {
+		endpoint = hostname_bak
+	}
 	step := cfg.Step
 	tags := cfg.Tags
 	ts := time.Now().Unix()

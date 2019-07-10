@@ -17,12 +17,11 @@ package main
 import (
 	"flag"
 	"fmt"
-	log "github.com/Sirupsen/logrus"
 	"github.com/open-falcon/falcon-plus/modules/agent/cron"
-	"github.com/open-falcon/falcon-plus/modules/agent/ethr"
 	"github.com/open-falcon/falcon-plus/modules/agent/funcs"
 	"github.com/open-falcon/falcon-plus/modules/agent/g"
 	"github.com/open-falcon/falcon-plus/modules/agent/http"
+	"github.com/open-falcon/falcon-plus/modules/agent/speedtest"
 	//"github.com/open-falcon/falcon-plus/modules/agent/plugins"
 	"os"
 )
@@ -66,13 +65,11 @@ func main() {
 	cron.SyncBuiltinMetrics()
 	cron.SyncTrustableIps()
 	cron.Collect()
-	log.Info("g.Config().Net_speed.IsServer :%t\n", g.Config().Net_speed.IsServer)
-	log.Info("g.Config().Net_speed.IsTest :%t\n", g.Config().Net_speed.IsTest)
 	if g.Config().Net_speed.IsServer {
-		ethr.Run(true)
+		speedtest.Server()
 	}
 	if g.Config().Net_speed.IsTest {
-		ethr.Run(false)
+		go speedtest.Client()
 	}
 	go http.Start()
 

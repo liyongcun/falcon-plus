@@ -18,6 +18,8 @@ import (
 	"encoding/json"
 	"log"
 	"os"
+	"os/exec"
+	"strings"
 	"sync"
 
 	"github.com/toolkits/file"
@@ -63,18 +65,13 @@ type CollectorConfig struct {
 	MountPoint  []string `json:"mountPoint"`
 }
 type Net_speed struct {
-	IsServer    bool   `json:"isServer"`
-	IsTest      bool   `json:"isTest"`
-	ClientDest  string `json:"clientDests"`
-	TestTypeStr string `json:"testType"`
-	ThCount     int    `json:"threads"`
-	BufLen      string `json:"bufflength"`
-	Duration    int    `json:"duration"`
-	RttCount    int    `json:"rttCount"`
-	Port        int    `json:"port"`
-	Ipv6        bool   `json:"ipv6flag"`
-	Gap         int    `json:"testgap"`
-	Reverse     bool   `json:"reverseflag"`
+	IsServer bool   `json:"isServer"`
+	IsTest   bool   `json:"isTest"`
+	BufLen   string `json:"bufflength"`
+	Duration int    `json:"duration"`
+	Threads  int    `json:"threads"`
+	Port     int    `json:"port"`
+	Interval int    `json:"interval"`
 }
 
 type GlobalConfig struct {
@@ -118,6 +115,10 @@ func Hostname() (string, error) {
 	if err != nil {
 		log.Println("ERROR: os.Hostname() fail", err)
 	}
+	hostname_bak := IP()
+	if strings.Contains(hostname, "localhost") && len(hostname_bak) > 7 && hostname_bak != "127.0.0.1" {
+		hostname = hostname_bak
+	}
 	return hostname, err
 }
 
@@ -131,7 +132,24 @@ func IP() string {
 	if len(LocalIp) > 0 {
 		ip = LocalIp
 	}
-
+	var host_ip string = ""
+	out, err := exec.Command("hostname", "--all-ip-addresses").Output()
+	if err == nil {
+		ip_list := strings.Split(strings.Replace(string(out), "\n", "", -1), " ")
+		for vv := range ip_list {
+			if ip_list[vv] == "127.0.0.1" || ip_list[vv] == "::1" || strings.Contains(ip_list[vv], "localhost") || len(ip_list[vv]) < 5 {
+				continue
+			}
+			host_ip = ip_list[vv]
+			break
+		}
+	} else {
+		log.Println("hostname --all-ip-addresses err" + err.Error())
+	}
+	//log.Printf(" get system ip %s --- real ip %s",host_ip,ip)
+	if (ip == "127.0.0.1" || ip == "::1" || ip == "localhost") && len(host_ip) > 1 {
+		ip = host_ip
+	}
 	return ip
 }
 

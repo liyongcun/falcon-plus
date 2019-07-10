@@ -6,7 +6,7 @@
     "bases": ["runtime"],
     "push": {
         "enabled": true,
-        "api": "http://127.0.0.1:6060/api/push"
+        "api": "http://127.0.0.1:1988/api/push"
     },
     "http": {
         "enabled": false,

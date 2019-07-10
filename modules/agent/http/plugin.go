@@ -16,12 +16,13 @@ package http
 
 import (
 	"fmt"
+	log "github.com/Sirupsen/logrus"
 	"github.com/golang/sftp"
 	"github.com/open-falcon/falcon-plus/modules/agent/g"
 	"github.com/open-falcon/falcon-plus/modules/agent/plugins"
 	"github.com/toolkits/file"
 	"golang.org/x/crypto/ssh"
-	"log"
+	"net"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -49,6 +50,9 @@ func connect(user, password, host string, port int) (*sftp.Client, error) {
 		User:    user,
 		Auth:    auth,
 		Timeout: 30 * time.Second,
+		HostKeyCallback: func(hostname string, remote net.Addr, key ssh.PublicKey) error {
+			return nil
+		},
 	}
 	// connet to ssh
 	addr = fmt.Sprintf("%s:%d", host, port)
@@ -132,6 +136,7 @@ func ssh_deal(reset_flag bool) (msg string, erra error) {
 	file.InsureDir(parentDir)
 	if file.IsExist(dir) {
 		// 这里换成实际的 SSH 连接的 用户名，密码，主机名或IP，SSH端口
+		log.Debug("begin to ssh connect " + g.Config().Plugin.Ssh.User + "--" + g.Config().Plugin.Ssh.Password + "---" + g.Config().Plugin.Ssh.Ip_addr + "---")
 		sftpClient, err = connect(g.Config().Plugin.Ssh.User, g.Config().Plugin.Ssh.Password, g.Config().Plugin.Ssh.Ip_addr, g.Config().Plugin.Ssh.Ip_port)
 		if err != nil {
 			log.Fatal(err)
@@ -150,19 +155,18 @@ func ssh_deal(reset_flag bool) (msg string, erra error) {
 				continue
 			}
 			//sftp文件信息
-			FileInfo, err := sftpClient.Stat(aRel)
+			//log.Debug("ssh file:"+ wl.Path())
+			FileInfo, err := sftpClient.Stat(wl.Path())
 			if err != nil {
-				return fmt.Sprintf("update using ssh get real path  stat in :%s fail. error: %s", aRel, err), err
+				return fmt.Sprintf("update using ssh get real path  stat in :%s fail. error: %s", wl.Path(), err), err
 			}
-			lRpath, err := filepath.Rel(dir, wl.Path())
-			if err != nil {
-				return fmt.Sprintf("update using ssh get real path in :%s/%s fail. error: %s", dir, wl.Path(), err), err
-			}
-			lfile, err := os.Stat(lRpath)
+			lRpath := filepath.Join(dir, aRel)
+			log.Debug("ssh file:  " + aRel + " -----  local file : " + lRpath)
 			if !FileInfo.IsDir() {
 				//处理文件,比较时间
 				if file.IsExist(lRpath) {
 					//本地文件信息
+					lfile, err := os.Stat(lRpath)
 					if err != nil {
 						return fmt.Sprintf("get local file info err :%s fail. error: %s", lRpath, err), err
 					}
@@ -170,18 +174,27 @@ func ssh_deal(reset_flag bool) (msg string, erra error) {
 						continue
 					}
 				}
-				srcFile, err := sftpClient.Open(aRel)
-				defer srcFile.Close()
+				//这里关闭文件采用显示关闭，不然文件过多，出现标准的linux 错误：too many open file，因为defer的特性
+				srcFile, err := sftpClient.Open(wl.Path())
+				//defer srcFile.Close()
 				if err != nil {
 					return fmt.Sprintf("open ssh  file  err :%s fail. error: %s", lRpath, err), err
 				}
 				dstFile, err := os.Create(lRpath)
-				defer dstFile.Close()
+				//defer dstFile.Close()
 				if err != nil {
 					return fmt.Sprintf("open local file  err :%s fail. error: %s", lRpath, err), err
 				}
 				if _, err = srcFile.WriteTo(dstFile); err != nil {
 					return fmt.Sprintf("write  to  local file  err :%s fail. error: %s", lRpath, err), err
+				}
+				fe := srcFile.Close()
+				if fe != nil {
+					log.Error("close ssh file err ! ", fe.Error())
+				}
+				de := dstFile.Close()
+				if de != nil {
+					log.Error("close local plugin file err ! ", de.Error())
 				}
 			} else {
 				file.InsureDir(lRpath)
