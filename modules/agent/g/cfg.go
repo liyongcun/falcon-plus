@@ -78,6 +78,7 @@ type GlobalConfig struct {
 	Debug         bool              `json:"debug"`
 	Hostname      string            `json:"hostname"`
 	IP            string            `json:"ip"`
+	Hostname2ip   bool              `json:"hostname2ip"`
 	Plugin        *PluginConfig     `json:"plugin"`
 	Heartbeat     *HeartbeatConfig  `json:"heartbeat"`
 	Transfer      *TransferConfig   `json:"transfer"`
@@ -101,6 +102,11 @@ func Config() *GlobalConfig {
 }
 
 func Hostname() (string, error) {
+
+	if Config().Hostname2ip {
+		return IP(), nil
+	}
+
 	hostname := Config().Hostname
 	if hostname != "" {
 		return hostname, nil

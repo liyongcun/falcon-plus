@@ -2,6 +2,7 @@
     "debug": true,
     "hostname": "",
     "ip": "",
+    "hostname2ip": true,
     "plugin": {
         "enabled": false,
         "dir": "./plugin",
