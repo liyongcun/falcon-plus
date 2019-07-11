@@ -3,7 +3,7 @@
     "hostname": "",
     "tags": "",
     "step": 60,
-    "bases": ["runtime"],
+    "bases": [],
     "push": {
         "enabled": true,
         "api": "http://127.0.0.1:1988/api/push"

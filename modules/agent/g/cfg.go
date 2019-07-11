@@ -26,11 +26,12 @@ import (
 )
 
 type Ssh struct {
-	Ip_addr  string `json:"ip_addr"`
-	Ip_port  int    `json:"ip_port"`
-	User     string `json:"user"`
-	Password string `json:"password"`
-	Path     string `json:"path"`
+	Ip_addr    string `json:"ip_addr"`
+	Ip_port    int    `json:"ip_port"`
+	User       string `json:"user"`
+	Password   string `json:"password"`
+	Path       string `json:"path"`
+	PrivateKey string `json:"privatekey"`
 }
 
 type PluginConfig struct {

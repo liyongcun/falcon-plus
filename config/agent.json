@@ -6,7 +6,12 @@
     "plugin": {
         "enabled": true,
         "dir": "./plugin",
-        "ssh": {"ip_addr": "127.0.0.1","ip_port":22,"user": "root","password":"123456","path": "/root"},
+        "ssh": { "ip_addr": "127.0.0.1",
+                 "ip_port":22,
+                 "user": "root",
+                 "password":"123456",
+                 "path": "/root",
+                 "privatekey":""},
         "logs": "./logs"
     },
     "net_speed": {

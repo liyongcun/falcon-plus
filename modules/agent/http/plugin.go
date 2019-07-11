@@ -22,6 +22,7 @@ import (
 	"github.com/open-falcon/falcon-plus/modules/agent/plugins"
 	"github.com/toolkits/file"
 	"golang.org/x/crypto/ssh"
+	"io/ioutil"
 	"net"
 	"net/http"
 	"os"
@@ -32,22 +33,68 @@ import (
 )
 
 // TODO  add by liyc 这里修改为sftp的模式，因为ssh是远程访问的核心
-// TODO 现在机器基本都是ssh登陆，用密码登陆，省去免密的麻烦
-func connect(user, password, host string, port int) (*sftp.Client, error) {
-	var (
-		auth         []ssh.AuthMethod
-		addr         string
-		clientConfig *ssh.ClientConfig
-		sshClient    *ssh.Client
-		sftpClient   *sftp.Client
-		err          error
-	)
-	// get auth method
-	auth = make([]ssh.AuthMethod, 0)
-	auth = append(auth, ssh.Password(password))
 
-	clientConfig = &ssh.ClientConfig{
-		User:    user,
+type Sftp_client struct {
+	clientConfig *ssh.ClientConfig
+	sshClient    *ssh.Client
+	sftpClient   *sftp.Client
+	pubkey       ssh.AuthMethod
+}
+
+func (sshftp *Sftp_client) PublicKeyFile(keypath string) ssh.AuthMethod {
+	if !file.IsExist(keypath) {
+		return nil
+	}
+	buffer, err := ioutil.ReadFile(keypath)
+	if err != nil {
+		return nil
+	}
+	key, err := ssh.ParsePrivateKey(buffer)
+	if err != nil {
+		return nil
+	}
+	return ssh.PublicKeys(key)
+}
+
+func (sshftp *Sftp_client) Sftp_close() {
+	sshftp.sftpClient.Close()
+	sshftp.sshClient.Close()
+}
+
+func (sshftp *Sftp_client) Connect_init() error {
+	var err error = nil
+
+	if len(g.Config().Plugin.Ssh.User) <= 0 {
+		return fmt.Errorf("ssh user not defined!")
+	}
+	if len(g.Config().Plugin.Ssh.Ip_addr) <= 0 {
+		return fmt.Errorf("ssh  ip address  not defined!")
+	}
+	if g.Config().Plugin.Ssh.Ip_port <= 0 {
+		return fmt.Errorf("ssh  ip  port  not defined!")
+	}
+
+	if len(g.Config().Plugin.Ssh.PrivateKey) <= 1 && len(g.Config().Plugin.Ssh.Password) <= 1 {
+		return fmt.Errorf("ssh auth method not defined!,please use password or PrivateKey")
+	}
+
+	if len(g.Config().Plugin.Ssh.PrivateKey) >= 1 && len(g.Config().Plugin.Ssh.Password) >= 1 {
+		log.Debug("ssh auth method password and PrivateKey both  defined , PrivateKey default")
+	}
+
+	if len(g.Config().Plugin.Ssh.PrivateKey) > 1 {
+		sshftp.pubkey = sshftp.PublicKeyFile(g.Config().Plugin.Ssh.PrivateKey)
+	}
+
+	auth := make([]ssh.AuthMethod, 0)
+	if sshftp.pubkey != nil {
+		auth = append(auth, sshftp.pubkey)
+	} else {
+		auth = append(auth, ssh.Password(g.Config().Plugin.Ssh.Password))
+	}
+
+	sshftp.clientConfig = &ssh.ClientConfig{
+		User:    g.Config().Plugin.Ssh.User,
 		Auth:    auth,
 		Timeout: 30 * time.Second,
 		HostKeyCallback: func(hostname string, remote net.Addr, key ssh.PublicKey) error {
@@ -55,15 +102,15 @@ func connect(user, password, host string, port int) (*sftp.Client, error) {
 		},
 	}
 	// connet to ssh
-	addr = fmt.Sprintf("%s:%d", host, port)
-	if sshClient, err = ssh.Dial("tcp", addr, clientConfig); err != nil {
-		return nil, err
+	addr := fmt.Sprintf("%s:%d", g.Config().Plugin.Ssh.Ip_addr, g.Config().Plugin.Ssh.Ip_port)
+	if sshftp.sshClient, err = ssh.Dial("tcp", addr, sshftp.clientConfig); err != nil {
+		return err
 	}
 	// create sftp client
-	if sftpClient, err = sftp.NewClient(sshClient); err != nil {
-		return nil, err
+	if sshftp.sftpClient, err = sftp.NewClient(sshftp.sshClient); err != nil {
+		return err
 	}
-	return sftpClient, nil
+	return nil
 }
 
 /*
@@ -126,23 +173,22 @@ func configPluginRoutes() {
 		RenderDataJson(w, plugins.Plugins)
 	})
 }*/
-func ssh_deal(reset_flag bool) (msg string, erra error) {
-	var (
-		err        error
-		sftpClient *sftp.Client
-	)
+func sftp_get(reset_flag bool) (msg string, erra error) {
 	dir := g.Config().Plugin.Dir
 	parentDir := file.Dir(dir)
 	file.InsureDir(parentDir)
+	sshCli := Sftp_client{nil, nil, nil, nil}
+	err := sshCli.Connect_init()
+	if err != nil {
+		return "open ssh fail", err
+	}
+	defer sshCli.Sftp_close()
 	if file.IsExist(dir) {
 		// 这里换成实际的 SSH 连接的 用户名，密码，主机名或IP，SSH端口
-		log.Debug("begin to ssh connect " + g.Config().Plugin.Ssh.User + "--" + g.Config().Plugin.Ssh.Password + "---" + g.Config().Plugin.Ssh.Ip_addr + "---")
-		sftpClient, err = connect(g.Config().Plugin.Ssh.User, g.Config().Plugin.Ssh.Password, g.Config().Plugin.Ssh.Ip_addr, g.Config().Plugin.Ssh.Ip_port)
 		if err != nil {
 			log.Fatal(err)
 		}
-		defer sftpClient.Close()
-		wl := sftpClient.Walk(g.Config().Plugin.Ssh.Path)
+		wl := sshCli.sftpClient.Walk(g.Config().Plugin.Ssh.Path)
 		if err != nil {
 			return fmt.Sprintf("update using ssh err in dir:%s fail. error: %s", dir, err), err
 		}
@@ -156,7 +202,7 @@ func ssh_deal(reset_flag bool) (msg string, erra error) {
 			}
 			//sftp文件信息
 			//log.Debug("ssh file:"+ wl.Path())
-			FileInfo, err := sftpClient.Stat(wl.Path())
+			FileInfo, err := sshCli.sftpClient.Stat(wl.Path())
 			if err != nil {
 				return fmt.Sprintf("update using ssh get real path  stat in :%s fail. error: %s", wl.Path(), err), err
 			}
@@ -175,7 +221,7 @@ func ssh_deal(reset_flag bool) (msg string, erra error) {
 					}
 				}
 				//这里关闭文件采用显示关闭，不然文件过多，出现标准的linux 错误：too many open file，因为defer的特性
-				srcFile, err := sftpClient.Open(wl.Path())
+				srcFile, err := sshCli.sftpClient.Open(wl.Path())
 				//defer srcFile.Close()
 				if err != nil {
 					return fmt.Sprintf("open ssh  file  err :%s fail. error: %s", lRpath, err), err
@@ -210,7 +256,7 @@ func configPluginRoutes() {
 			w.Write([]byte("plugin not enabled"))
 			return
 		}
-		err_msg, err := ssh_deal(false)
+		err_msg, err := sftp_get(false)
 		if err != nil {
 			w.Write([]byte("plugin not update : [" + err_msg + "]"))
 			return
@@ -222,7 +268,7 @@ func configPluginRoutes() {
 			w.Write([]byte("plugin not enabled"))
 			return
 		}
-		err_msg, err := ssh_deal(true)
+		err_msg, err := sftp_get(true)
 		if err != nil {
 			w.Write([]byte("plugin not reset: [" + err_msg + "]"))
 			return
