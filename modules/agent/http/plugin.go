@@ -184,10 +184,6 @@ func sftp_get(reset_flag bool) (msg string, erra error) {
 	}
 	defer sshCli.Sftp_close()
 	if file.IsExist(dir) {
-		// 这里换成实际的 SSH 连接的 用户名，密码，主机名或IP，SSH端口
-		if err != nil {
-			log.Fatal(err)
-		}
 		wl := sshCli.sftpClient.Walk(g.Config().Plugin.Ssh.Path)
 		if err != nil {
 			return fmt.Sprintf("update using ssh err in dir:%s fail. error: %s", dir, err), err
