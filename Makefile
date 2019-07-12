@@ -69,6 +69,17 @@ pack: checkbin
 	@mkdir out/graph/data
 	@bash ./config/confgen.sh
 	@cp $(TARGET) ./out/$(TARGET)
+	@mkdir ./out/config/
+	@(cd ./out/config && ln -s ../agent/config agent)
+	@(cd ./out/config && ln -s ../alarm/config alarm)
+	@(cd ./out/config && ln -s ../api/config api)
+	@(cd ./out/config && ln -s ../gateway/config gateway)
+	@(cd ./out/config && ln -s ../graph/config  graph)
+	@(cd ./out/config && ln -s ../hbs/config hbs)
+	@(cd ./out/config && ln -s ../judge/config judge)
+	@(cd ./out/config && ln -s ../nodata/config nodata)
+	@(cd ./out/config && ln -s ../aggregator/config aggregator)
+	@(cd ./out/config && ln -s ../transfer/config transfer)
 	tar -C out -zcf open-falcon-v$(VERSION).tar.gz .
 	@rm -rf out
 
