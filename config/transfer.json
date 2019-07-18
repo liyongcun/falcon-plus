@@ -10,7 +10,7 @@
         "listen": "%%TRANSFER_RPC%%"
     },
     "socket": {
-        "enabled": true,
+        "enabled": false,
         "listen": "0.0.0.0:4444",
         "timeout": 3600
     },

@@ -6,12 +6,12 @@
     "plugin": {
         "enabled": true,
         "dir": "./plugin",
-        "ssh": { "ip_addr": "127.0.0.1",
+        "ssh": { "ip_addr": "%%PLUGIN_IP%%",
                  "ip_port":22,
-                 "user": "root",
-                 "password":"123456",
-                 "path": "/root",
-                 "privatekey":""},
+                 "user": "%%PLUGIN_USER%%",
+                 "password":"%%PLUGIN_PASSWD%%",
+                 "path": "%%PLUGIN_PATH%%",
+                 "privatekey":"%%SSH_PRIVATEKEY%%"},
         "logs": "./logs"
     },
     "net_speed": {
@@ -21,7 +21,7 @@
         "duration":1,
         "interval":600,
         "threads": 1,
-        "port":9999
+        "port":%%NET_SPEED_PORT%%
     },
     "heartbeat": {
         "enabled": true,
@@ -32,14 +32,14 @@
     "transfer": {
         "enabled": true,
         "addrs": [
-            "%%TRANSFER_RPC%%"
+            "%%TRANSFER_IP%%"
         ],
         "interval": 60,
         "timeout": 1000
     },
     "http": {
         "enabled": true,
-        "listen": ":1988",
+        "listen": "%%AGENT_HTTP%%",
         "backdoor": false
     },
     "collector": {

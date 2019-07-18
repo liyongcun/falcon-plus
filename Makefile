@@ -58,7 +58,10 @@ pack: checkbin
 	@$(foreach var,$(CMD),mkdir -p ./out/$(var)/bin;)
 	@$(foreach var,$(CMD),mkdir -p ./out/$(var)/config;)
 	@$(foreach var,$(CMD),mkdir -p ./out/$(var)/logs;)
-	@$(foreach var,$(CMD),cp ./config/$(var).json ./out/$(var)/config/cfg.json;)
+	@mkdir ./out/config/
+	@$(foreach var,$(CMD),cp ./config/$(var).json ./out/config/$(var).json ;)
+	@cp ./config/confgen.sh ./out/config/
+	@$(foreach var,$(CMD),ln -s ../../config/$(var).json ./out/$(var)/config/cfg.json;)
 	@$(foreach var,$(CMD),cp ./bin/$(var)/falcon-$(var) ./out/$(var)/bin;)
 	@cp -r ./modules/agent/public ./out/agent/
 	@cp -r ./scripts/mysql ./out/mysql
@@ -67,19 +70,7 @@ pack: checkbin
 	@(cd ./out && mkdir -p ./agent/plugin && ln -s ./agent/plugin/ ./plugin)
 	@cp -r ./modules/api/data ./out/api/
 	@mkdir out/graph/data
-	@bash ./config/confgen.sh
 	@cp $(TARGET) ./out/$(TARGET)
-	@mkdir ./out/config/
-	@(cd ./out/config && ln -s ../agent/config agent)
-	@(cd ./out/config && ln -s ../alarm/config alarm)
-	@(cd ./out/config && ln -s ../api/config api)
-	@(cd ./out/config && ln -s ../gateway/config gateway)
-	@(cd ./out/config && ln -s ../graph/config  graph)
-	@(cd ./out/config && ln -s ../hbs/config hbs)
-	@(cd ./out/config && ln -s ../judge/config judge)
-	@(cd ./out/config && ln -s ../nodata/config nodata)
-	@(cd ./out/config && ln -s ../aggregator/config aggregator)
-	@(cd ./out/config && ln -s ../transfer/config transfer)
 	tar -C out -zcf open-falcon-v$(VERSION).tar.gz .
 	@rm -rf out
 

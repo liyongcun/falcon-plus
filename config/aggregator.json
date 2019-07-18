@@ -13,8 +13,8 @@
     "api": {
         "connect_timeout": 500,
         "request_timeout": 2000,
-        "plus_api": "http://127.0.0.1:8080",
+        "plus_api": "http://%%API_ADDR%%",
         "plus_api_token": "%%PLUS_API_DEFAULT_TOKEN%%",
-        "push_api": "http://127.0.0.1:1988/v1/push"
+        "push_api": "http://%%PUSH_ADDR%%/v1/push"
     }
 }

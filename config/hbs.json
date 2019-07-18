@@ -4,7 +4,7 @@
     "hosts": "",
     "maxConns": 20,
     "maxIdle": 15,
-    "listen": ":6030",
+    "listen": "%%HBS_RPC%%",
     "trustable": [""],
     "http": {
         "enabled": true,

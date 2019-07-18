@@ -2,15 +2,15 @@
     "debug": true,
     "http": {
         "enabled": true,
-        "listen": "0.0.0.0:16060"
+        "listen": "%%GATEWAY_HTTP%%"
     },
     "rpc": {
         "enabled": true,
-        "listen": "0.0.0.0:18433"
+        "listen": "%%GATEWAY_RPC%%"
     },
     "socket": {
-        "enabled": true,
-        "listen": "0.0.0.0:14444",
+        "enabled": false,
+        "listen": "%%GATEWAY_SOCKET%%",
         "timeout": 3600
     },
     "transfer": {
