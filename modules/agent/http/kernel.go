@@ -23,7 +23,7 @@ import (
 
 func configKernelRoutes() {
 	http.HandleFunc("/proc/kernel/hostname", func(w http.ResponseWriter, r *http.Request) {
-		data, err := g.Hostname()
+		data, err := g.Real_Hostname()
 		AutoRender(w, data, err)
 	})
 

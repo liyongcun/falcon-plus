@@ -129,6 +129,28 @@ func Hostname() (string, error) {
 	return hostname, err
 }
 
+func Real_Hostname() (string, error) {
+
+	hostname := Config().Hostname
+	if hostname != "" {
+		return hostname, nil
+	}
+
+	if os.Getenv("FALCON_ENDPOINT") != "" {
+		hostname = os.Getenv("FALCON_ENDPOINT")
+		return hostname, nil
+	}
+
+	hostname, err := os.Hostname()
+	if err != nil {
+		log.Println("ERROR: os.Hostname() fail", err)
+	}
+	hostname_bak := IP()
+	if strings.Contains(hostname, "localhost") && len(hostname_bak) > 7 && hostname_bak != "127.0.0.1" {
+		hostname = hostname_bak
+	}
+	return hostname, err
+}
 func IP() string {
 	ip := Config().IP
 	if ip != "" {
