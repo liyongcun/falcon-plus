@@ -2,7 +2,7 @@
     "debug": true,
     "hostname": "",
     "ip": "",
-    "hostname2ip":false,
+    "hostname2ip":true,
     "plugin": {
         "enabled": true,
         "dir": "./plugin",
@@ -32,7 +32,7 @@
     "transfer": {
         "enabled": true,
         "addrs": [
-            "%%TRANSFER_IP%%"
+            "%%TRANSFER_ADDR%%"
         ],
         "interval": 60,
         "timeout": 1000

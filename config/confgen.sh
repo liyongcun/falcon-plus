@@ -1,10 +1,11 @@
 #!/bin/bash
-
+#特别说明，上部分为监听端口，如果sever主机部署，请修改对应的下面的addr的信息，
+# 例如tarsfer的监听为8433，则下面地址要对应修改
 confs=(
      #插件相关的信息
-    '%PLUGIN_IP%%=127.0.0.1'
+    '%%PLUGIN_IP%%=127.0.0.1'
     #插件同步的ssh端口，一般为22号端口
-    '%PLUGIN_PORT%%=22'
+    '%%PLUGIN_PORT%%=22'
     #插件同步的ssh用户
     '%%PLUGIN_USER%%=root'
     #插件同步的ssh密码,如果配置为key的模式,密码可以为空
@@ -14,7 +15,8 @@ confs=(
     #插件的ssh同步私有key，如果用key回话，则必须要填写
     '%%SSH_PRIVATEKEY%%=' #/home/user/.ssh/rsa
     #监听端口，注意“0.0.0.0”
-    #客户端监听ip地址，这个端口支持第三方数据，push到agent_http端口上
+    #客户端监听ip地址，这个端口支持第三方数据，push到agent_http端口上,这个地址在前台写死的，建议不要修改，
+    # 如果要修改，就需要修改前台的端口号
     '%%AGENT_HTTP%%=0.0.0.0:1988'
     #集群合并信息的http的地址
     '%%AGGREGATOR_HTTP%%=0.0.0.0:6055'
@@ -50,7 +52,7 @@ confs=(
     '%%NET_SPEED_PORT%%=10009'
     #配置地址类
     '%%REDIS%%=127.0.0.1:6379'
-    '%%TRANSFER_IP%%=127.0.0.1'
+    '%%TRANSFER_ADDR%%=127.0.0.1:8433'
     '%%MYSQL%%=root:@tcp(127.0.0.1:3306)'
     '%%PLUS_API_DEFAULT_TOKEN%%=default-token-used-in-server-side'
     '%%API_ADDR%%=127.0.0.1:8080'
@@ -77,7 +79,7 @@ configurer() {
             # Note the "" and -e  after -i, needed in OS X
             find ./*.json -type f -exec sed -i .tpl -e "s/${search}/${replace}/g" {} \;
         else
-            find ./*.json -type f -exec sed -i "s/${search}/${replace}/g" {} \;
+            find ./*.json -type f -exec sed -i "s#${search}#${replace}#g" {} \;
         fi
     done
 }
