@@ -11,7 +11,7 @@
         "listen": "%%JUDGE_RPC%%"
     },
     "hbs": {
-        "servers": ["%%HBS_RPC%%"],
+        "servers": ["%%HBS_ADDR%%"],
         "timeout": 300,
         "interval": 60
     },

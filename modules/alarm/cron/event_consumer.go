@@ -34,7 +34,18 @@ func consume(event *cmodel.Event, isHigh bool) {
 	if action == nil {
 		return
 	}
+	//todo 是否发送zabbix
+	if g.Config().Zabbix.Enabled {
+		sender := NewSender(g.Config().Zabbix.Addr)
+		h, k, v, d := BuildCommonZabbixContent(event)
+		metrics := []*Metric{NewMetric(h, k, v, d)}
+		_, err := sender.Send(NewPacket(metrics))
 
+		if err == nil {
+			log.Error("sending should have failed : " + err.Error())
+		}
+
+	}
 	if action.Callback == 1 {
 		HandleCallback(event, action)
 	}

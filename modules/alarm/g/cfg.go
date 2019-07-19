@@ -37,6 +37,10 @@ type RedisConfig struct {
 	UserMailQueue string   `json:"userMailQueue"`
 }
 
+type ZabbixConfig struct {
+	Addr    string `json:"zabbix_addr"`
+	Enabled bool   `json:"sendflag"`
+}
 type ApiConfig struct {
 	Sms          string `json:"sms"`
 	Mail         string `json:"mail"`
@@ -71,6 +75,7 @@ type GlobalConfig struct {
 	Api          *ApiConfig          `json:"api"`
 	Worker       *WorkerConfig       `json:"worker"`
 	Housekeeper  *HousekeeperConfig  `json:"Housekeeper"`
+	Zabbix       *ZabbixConfig       `json:"zabbix"`
 }
 
 var (

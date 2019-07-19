@@ -4,6 +4,10 @@
         "enabled": true,
         "listen": "0.0.0.0:9912"
     },
+    "zabbix": {
+        "sendflag": false,
+        "zabbix_addr":"127.0.0.1:1234"
+    },
     "redis": {
         "addr": "127.0.0.1:6379",
         "maxIdle": 5,

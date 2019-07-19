@@ -176,7 +176,10 @@ func queryLastPoints(param []*cmodel.GraphLastParam) (resp []*cmodel.GraphLastRe
 	}
 
 	req.Body(b)
-
+	if g.Config().Debug {
+		re, _ := req.String()
+		log.Println("lastpoint return " + re)
+	}
 	err = req.ToJson(&resp)
 	if err != nil {
 		return

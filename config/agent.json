@@ -25,7 +25,7 @@
     },
     "heartbeat": {
         "enabled": true,
-        "addr": "%%HBS_RPC%%",
+        "addr": "%%HBS_ADDR%%",
         "interval": 60,
         "timeout": 1000
     },

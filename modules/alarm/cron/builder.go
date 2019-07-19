@@ -57,6 +57,23 @@ func BuildCommonIMContent(event *model.Event) string {
 		event.FormattedTime(),
 	)
 }
+func BuildCommonZabbixContent(event *model.Event) (key string, v string, info string, t int64) {
+	return event.Endpoint, event.Metric(), fmt.Sprintf(
+		"[P%d][%s][%s][][%s %s %s %s %s%s%s][O%d %s]",
+		event.Priority(),
+		event.Status,
+		event.Endpoint,
+		event.Note(),
+		event.Func(),
+		event.Metric(),
+		utils.SortedTags(event.PushedTags),
+		utils.ReadableFloat(event.LeftValue),
+		event.Operator(),
+		utils.ReadableFloat(event.RightValue()),
+		event.CurrentStep,
+		event.FormattedTime(),
+	), event.EventTime
+}
 
 func BuildCommonMailContent(event *model.Event) string {
 	link := g.Link(event)
