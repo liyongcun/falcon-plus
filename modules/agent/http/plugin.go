@@ -47,10 +47,12 @@ func (sshftp *Sftp_client) PublicKeyFile(keypath string) ssh.AuthMethod {
 	}
 	buffer, err := ioutil.ReadFile(keypath)
 	if err != nil {
+		log.Debug("read ssh private file error" + err.Error())
 		return nil
 	}
 	key, err := ssh.ParsePrivateKey(buffer)
 	if err != nil {
+		log.Debug("ParsePrivateKey error" + err.Error())
 		return nil
 	}
 	return ssh.PublicKeys(key)
@@ -83,6 +85,7 @@ func (sshftp *Sftp_client) Connect_init() error {
 	}
 
 	if len(g.Config().Plugin.Ssh.PrivateKey) > 1 {
+		log.Debug("PrivateKey:" + g.Config().Plugin.Ssh.PrivateKey)
 		sshftp.pubkey = sshftp.PublicKeyFile(g.Config().Plugin.Ssh.PrivateKey)
 	}
 
@@ -102,6 +105,7 @@ func (sshftp *Sftp_client) Connect_init() error {
 		},
 	}
 	// connet to ssh
+
 	addr := fmt.Sprintf("%s:%d", g.Config().Plugin.Ssh.Ip_addr, g.Config().Plugin.Ssh.Ip_port)
 	if sshftp.sshClient, err = ssh.Dial("tcp", addr, sshftp.clientConfig); err != nil {
 		return err
@@ -242,6 +246,8 @@ func sftp_get(reset_flag bool) (msg string, erra error) {
 				file.InsureDir(lRpath)
 			}
 		}
+	} else {
+		log.Error("local plugin path [" + dir + "] not found")
 	}
 	return "Success", nil
 }
@@ -254,7 +260,7 @@ func configPluginRoutes() {
 		}
 		err_msg, err := sftp_get(false)
 		if err != nil {
-			w.Write([]byte("plugin not update : [" + err_msg + "]"))
+			w.Write([]byte("plugin not update : [" + err_msg + "-" + err.Error() + "]"))
 			return
 		}
 		w.Write([]byte("success"))
@@ -266,7 +272,7 @@ func configPluginRoutes() {
 		}
 		err_msg, err := sftp_get(true)
 		if err != nil {
-			w.Write([]byte("plugin not reset: [" + err_msg + "]"))
+			w.Write([]byte("plugin not reset: [" + err_msg + "-" + err.Error() + "]"))
 			return
 		}
 		w.Write([]byte("success"))
