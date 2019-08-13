@@ -234,6 +234,7 @@ func sftp_get(reset_flag bool) (msg string, erra error) {
 				if _, err = srcFile.WriteTo(dstFile); err != nil {
 					return fmt.Sprintf("write  to  local file  err :%s fail. error: %s", lRpath, err), err
 				}
+				dstFile.Chmod(FileInfo.Mode())
 				fe := srcFile.Close()
 				if fe != nil {
 					log.Error("close ssh file err ! ", fe.Error())
