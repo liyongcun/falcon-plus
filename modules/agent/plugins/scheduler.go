@@ -120,17 +120,22 @@ func PluginRun(plugin *Plugin) {
 	}
 
 	var cmd *exec.Cmd
+	//采用相对路径运行
 	if args == "" {
-		cmd = exec.Command(fpath)
+		//cmd = exec.Command(fpath)
+		cmd = exec.Command(plugin.FilePath)
 	} else {
 		arg_list := PluginArgsParse(args)
-		cmd = exec.Command(fpath, arg_list...)
+		//cmd = exec.Command(fpath, arg_list...)
+		cmd = exec.Command(plugin.FilePath, arg_list...)
 	}
 	var stdout bytes.Buffer
 	cmd.Stdout = &stdout
 	var stderr bytes.Buffer
 	cmd.Stderr = &stderr
 	cmd.SysProcAttr = &syscall.SysProcAttr{Setpgid: true}
+	cmd.Dir = g.Config().Plugin.Dir
+	cmd.Path = g.Config().Plugin.Dir
 	err := cmd.Start()
 	if err != nil {
 		log.Printf("[ERROR] plugin start fail: %s(%s) , error: %s\n", fpath, args, err)
