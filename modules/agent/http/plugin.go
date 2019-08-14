@@ -27,6 +27,7 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"strings"
 
 	//"os/exec"
 	"time"
@@ -202,13 +203,23 @@ func sftp_get(reset_flag bool) (msg string, erra error) {
 			}
 			//sftp文件信息
 			//log.Debug("ssh file:"+ wl.Path())
-			FileInfo, err := sshCli.sftpClient.Stat(wl.Path())
+			FileInfo, err := sshCli.sftpClient.Lstat(wl.Path())
 			if err != nil {
 				return fmt.Sprintf("update using ssh get real path  stat in :%s fail. error: %s", wl.Path(), err), err
 			}
 			lRpath := filepath.Join(dir, aRel)
-			log.Debug("ssh file:  " + aRel + " -----  local file : " + lRpath)
-			if !FileInfo.IsDir() {
+			//log.Debug("ssh file:  " + aRel + " -----  local file : " + lRpath)
+
+			if strings.HasSuffix(aRel, ".pyc") {
+				//.pyc 不同步，这个是运行后的二进制文件，
+				continue
+			}
+			if FileInfo.Mode()&os.ModeSymlink != 0 {
+				//创建软连接
+				link, _ := sshCli.sftpClient.ReadLink(wl.Path())
+				os.Symlink(link, lRpath)
+				continue
+			} else if !FileInfo.IsDir() {
 				//处理文件,比较时间
 				if file.IsExist(lRpath) {
 					//本地文件信息
