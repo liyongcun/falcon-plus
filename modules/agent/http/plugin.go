@@ -223,7 +223,7 @@ func sftp_get(reset_flag bool) (msg string, erra error) {
 				//处理文件,比较时间
 				if file.IsExist(lRpath) {
 					//本地文件信息
-					lfile, err := os.Stat(lRpath)
+					lfile, err := os.Lstat(lRpath)
 					if err != nil {
 						return fmt.Sprintf("get local file info err :%s fail. error: %s", lRpath, err), err
 					}
