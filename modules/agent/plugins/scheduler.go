@@ -107,6 +107,8 @@ func PluginArgsParse(raw_args string) []string {
 func PluginRun(plugin *Plugin) {
 	timeout := plugin.Cycle*1000 - 500
 	fpath := filepath.Join(g.Config().Plugin.Dir, plugin.FilePath)
+	abs_path, _ := filepath.Abs(g.Config().Plugin.Dir)
+
 	args := plugin.Args
 
 	if !file.IsExist(fpath) {
@@ -116,6 +118,7 @@ func PluginRun(plugin *Plugin) {
 
 	debug := g.Config().Debug
 	if debug {
+		log.Println("plugin path: " + abs_path + " plugin.FilePath " + plugin.FilePath)
 		log.Printf("%s(%s) running...", fpath, args)
 	}
 
@@ -134,8 +137,8 @@ func PluginRun(plugin *Plugin) {
 	var stderr bytes.Buffer
 	cmd.Stderr = &stderr
 	cmd.SysProcAttr = &syscall.SysProcAttr{Setpgid: true}
-	cmd.Dir = g.Config().Plugin.Dir
-	cmd.Path = g.Config().Plugin.Dir
+	cmd.Dir = abs_path
+	//cmd.Path = abs_path
 	err := cmd.Start()
 	if err != nil {
 		log.Printf("[ERROR] plugin start fail: %s(%s) , error: %s\n", fpath, args, err)
