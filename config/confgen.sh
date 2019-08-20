@@ -85,4 +85,42 @@ configurer() {
         fi
     done
 }
+init_db(){
+  #数据库初始化
+  # Falcon+
+  mysql_cmd=`which mysql`
+  if [ ${#mysql_cmd}  -lt 3 ]
+  then
+     echo "没有发现mysql命令，请手动执行数据库初始化"
+     return
+   else
+    ip="127.0.0.1"
+    port=3306
+    user="root"
+    passwd=""
+
+    for i in "${confs[@]}"
+     do
+        search="${i%%=*}"
+        replace="${i##*=}"
+        if [ ${search} == '%%MYSQL%%' ]
+        then
+            echo "mysql 信息如下: "+${replace}
+            user=`echo ${replace}|awk -F':' '{print $1}'`
+            passwd=`echo ${replace}|awk -F'@' '{print $1}'|awk -F':' '{print $2}'`
+            ip=`echo ${replace}|awk -F'@' '{print $2}'|sed -e 's/tcp(//' -e 's/)//' |awk -F':' '{print $1}'`
+            port=`echo ${replace}|awk -F'@' '{print $2}'|sed -e 's/tcp(//' -e 's/)//' |awk -F':' '{print $2}'`
+            break
+         else
+            continue
+        fi
+     done
+      mysql -h ${ip} -u ${user} -P ${port} -p ${passwd} < ../mysq/db_schema/1_uic-db-schema.sql
+      mysql -h ${ip} -u ${user} -P ${port} -p ${passwd} < ../mysq/db_schema/2_portal-db-schema.sql
+      mysql -h ${ip} -u ${user} -P ${port} -p ${passwd} < ../mysq/db_schema/3_dashboard-db-schema.sql
+      mysql -h ${ip} -u ${user} -P ${port} -p ${passwd} < ../mysq/db_schema/4_graph-db-schema.sql
+      mysql -h ${ip} -u ${user} -P ${port} -p ${passwd} < ../mysq/db_schema/5_alarms-db-schema.sql
+  fi
+}
 configurer
+init_db
