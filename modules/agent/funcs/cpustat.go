@@ -15,6 +15,7 @@
 package funcs
 
 import (
+	"fmt"
 	"github.com/open-falcon/falcon-plus/common/model"
 	"github.com/toolkits/nux"
 	"sync"
@@ -49,7 +50,11 @@ func deltaTotal() uint64 {
 	if procStatHistory[1] == nil {
 		return 0
 	}
-	return procStatHistory[0].Cpu.Total - procStatHistory[1].Cpu.Total
+	if procStatHistory[0].Cpu.Total < procStatHistory[1].Cpu.Total {
+		return 0.0 - (procStatHistory[0].Cpu.Total - procStatHistory[1].Cpu.Total)
+	} else {
+		return procStatHistory[0].Cpu.Total - procStatHistory[1].Cpu.Total
+	}
 }
 
 func CpuIdle() float64 {
@@ -104,6 +109,11 @@ func CpuIowait() float64 {
 		return 0.0
 	}
 	invQuotient := 100.00 / float64(dt)
+	if (procStatHistory[0].Cpu.Iowait - procStatHistory[1].Cpu.Iowait) > dt {
+		//系统bug
+		fmt.Printf("system bug：invQuotient:%f,Iowait[0]:%f,Iowait[0]:%f\n", invQuotient, procStatHistory[0].Cpu.Iowait, procStatHistory[1].Cpu.Iowait)
+		return 0.0
+	}
 	return float64(procStatHistory[0].Cpu.Iowait-procStatHistory[1].Cpu.Iowait) * invQuotient
 }
 
